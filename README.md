@@ -19,7 +19,7 @@ Session tokens for each permission set are then sent to a SQS queue, which is in
 
 ##  Install / Deploy
 
-1) Install SAM CLI
+1) sam init
 2) Update the samconfig.toml configuration file:
     STARTURL = The Victim's SSO URL
     REGION = <Region>
@@ -28,4 +28,8 @@ Session tokens for each permission set are then sent to a SQS queue, which is in
 3) sam build
 4) sam deploy
 5) Upload ./victim_cfn/victim_cfn.yaml to the S3 bucket deployed to he Attacker's account (awssupportbucket-<attacker's account id>)
+
+##  Usage
+
+
 
