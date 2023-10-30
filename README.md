@@ -1,6 +1,6 @@
 # awessomest_phish
 
-This method was originally discussed in a blog by Christophe Tafani-Dereeper [blog](https://blog.christophetd.fr/phishing-for-aws-credentials-via-aws-sso-device-code-authentication/). This tool is an implementation of Christophe Tafani-Dereeper's research and builds upon Sebastian Mora's work, [awsssome_phish](https://github.com/sebastian-mora/awsssome_phish#awsssome_phish). It has been expanded to include automated persistence in the victim's account(s). This repository is intended only for authorized phishing tests. Please use responsibly and don't misuse it. 
+This method was originally discussed in a blog by Christophe Tafani-Dereeper [blog](https://blog.christophetd.fr/phishing-for-aws-credentials-via-aws-sso-device-code-authentication/). This tool is an implementation of Christophe Tafani-Dereeper's research and builds upon Sebastian Mora's work, [awsssome_phish](https://github.com/sebastian-mora/awsssome_phish#awsssome_phish) to expand it to include automated persistence by deploying assumeable adminstrative roles in the victim's account(s). This repository is intended only for authorized phishing tests. Please use responsibly and don't misuse it. 
 
 ## awessomest_phish overview
 
