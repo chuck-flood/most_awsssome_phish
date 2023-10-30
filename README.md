@@ -1,8 +1,8 @@
-# awessomest_phish
+# most_awessome_phish
 
 This method was originally discussed in a blog by Christophe Tafani-Dereeper [blog](https://blog.christophetd.fr/phishing-for-aws-credentials-via-aws-sso-device-code-authentication/). This tool is an implementation of Christophe Tafani-Dereeper's research and builds upon Sebastian Mora's work, [awsssome_phish](https://github.com/sebastian-mora/awsssome_phish#awsssome_phish) to expand it to include automated persistence by deploying assumeable adminstrative roles in the victim's account(s). This repository is intended only for authorized phishing tests. Please use responsibly and don't misuse it. 
 
-## awessomest_phish overview
+## most_awessome_phish overview
 
 When a user visits the phishing URL a lambda function starts sso-oicd authentication, and the user is redirected to a device authenication URL to the approve the OIDC request.  Additionally when the user clicks on the phishing link, a simple StepFunctions statemachine is invoked in the background and it attempts to create an OIDC token every 30 seconds until the 6 minute device authenication URL times out.  If the user accepts the OIDC/Device Code Flow request, the SFN statemachine will then create AWS session tokens from the OIDC token for every account and permmission set the user has access to.
 
@@ -11,13 +11,13 @@ Session tokens for each permission set are then sent to a SQS queue, which is in
 ![unnamed](https://github.com/chuckiewonder/most_awsssome_phish/assets/11650102/173ce411-8d36-487b-9d9c-5d451cf64d12)
 
 
-##  Requirements
+###  Requirements
 
 * SAM CLI - [Install the SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
 * Python 3 - [Python 3 installed](https://www.python.org/downloads/)
 
 
-##  Install / Deploy
+###  Install / Deploy
 
 1. Update the samconfig.toml configuration file:
     - STARTURL = The Victim's SSO URL
@@ -29,7 +29,7 @@ Session tokens for each permission set are then sent to a SQS queue, which is in
 1. Upload ./victim_cfn/victim_cfn.yaml to the S3 bucket deployed to he Attacker's account (awssupportbucket-<attacker's account id>)
     - You could potentially leverage a makefile or translated this to the CDK to automate this step.
 
-##  Usage
+###  Usage
 
 The following is outputted as part of the CFN stack:
 
