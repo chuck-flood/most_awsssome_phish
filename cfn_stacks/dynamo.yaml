@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  awessomest_phish
+
+  Dynamo CFN Stack
+
+Resources:
+  CredTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: CredTable
+      AttributeDefinitions:
+        - AttributeName: account_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: account_id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+Outputs:
+  CredTable:
+    Description: Dynamo Table Name 
+    Value: !Ref CredTable
+  CredTableArn:
+    Description: Dynamo Table Name 
+    Value: !GetAtt CredTable.Arn

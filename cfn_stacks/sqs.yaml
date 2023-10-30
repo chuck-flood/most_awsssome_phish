@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  awessomest_phish
+
+  SQS CFN Stack
+
+Resources:
+  CredQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: CredQueue
+      MessageRetentionPeriod: 14400
+      VisibilityTimeout: 720
+
+Outputs:
+  CredQueueUrl:
+    Description: SQS Queue URL
+    Value: !Ref CredQueue
+    
+  CredQueueArn:
+    Description: SQS Queue ARN
+    Value: !GetAtt CredQueue.Arn

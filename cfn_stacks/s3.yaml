@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  awessomest_phish
+
+  S3 CFN Stack
+
+Resources:
+  CFNBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub awssupportbucket-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  BucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    DeletionPolicy: Retain
+    Properties:
+      Bucket:
+        Ref: CFNBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource:
+              - !Sub arn:aws:s3:::${CFNBucket}/*
+
+Outputs:
+  CFNBucket:
+    Description: CFNBucket Domain Name
+    Value: !GetAtt CFNBucket.DomainName

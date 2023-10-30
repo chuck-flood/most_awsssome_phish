@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  awessomest_phish
+
+  SNS CFN Stack
+
+Parameters:
+  SNSRECIPIENT:
+    Description: Email Recipient
+    Type: String
+    Default: changeme@example.com
+
+Resources:
+  PwnNotification:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: PwnNotification
+      Subscription:
+      - Endpoint: !Ref SNSRECIPIENT
+        Protocol: email
+
+
+Outputs:
+  PwnNotification:
+    Description: PwnNotification Topic ARN
+    Value: !GetAtt PwnNotification.TopicArn 

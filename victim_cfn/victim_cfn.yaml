@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  SupportAccount:
+    Description: AWS Support Account
+    Type: String
+
+Resources: 
+  AwsSupportRole: 
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: AwsSupportRole 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: "Allow"
+            Principal: 
+              AWS: !Sub arn:aws:iam::${SupportAccount}:root
+            Action: 
+              - "sts:AssumeRole"
+      Path: "/"
+  RolePolicies: 
+    Type: "AWS::IAM::Policy"
+    Properties: 
+      PolicyName: "AwsSupportPolicy"
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: "Allow"
+            Action: "*"
+            Resource: "*"
+      Roles: 
+        - Ref: "AwsSupportRole"
+
