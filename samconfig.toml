@@ -25,7 +25,7 @@ parameter_overrides = [
     "STARTURL=https://CHANGEME.awsapps.com/start",
     "REGION=us-east-1",
     "STAGE=Prod",
-    "SNSRECIPIENT=CHANGEME@example.com
+    "SNSRECIPIENT=CHANGEME@example.com"
     ]
 
 
