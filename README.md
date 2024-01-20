@@ -27,7 +27,7 @@ Session tokens for each permission set are then sent to an SQS queue, which, in 
 1. sam build
 1. sam deploy
 1. Upload ./victim_cfn/victim_cfn.yaml to the S3 bucket deployed to the attacker's account (awssupportbucket-<attacker's account id>)
-    - You could potentially leverage a makefile or translated this to the CDK to automate this step.
+    - You could potentially leverage a makefile or convert this to the CDK to automate this step.
 
 ### Usage
 
